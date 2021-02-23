@@ -15,34 +15,37 @@ type PathConf struct {
     } `json:"paths"`
 }
 
-
-
-func ParsePath() {
-
-    //return paths
-}
-
-func HomeRouterHandler(w http.ResponseWriter, r *http.Request) {
-    //var paths := ParsePath()
-    var pathConfiguration interface{}
-    //var con PathConf
-    jsonData := []byte(`
+const ShortUrlPaths = `
     {
         "paths" : {
             "/go-http": "https://golang.org/pkg/net/http/",
             "/go-gophers" : "https://github.com/shalakhin/gophericons/blob/master/preview.jpg"
         }
-    }`)
+    }`
 
-    err := json.Unmarshal(jsonData, &pathConfiguration)
+
+func ParseJSON(JSONData string) map[string]interface{} {
+    var pathConfiguration interface{}
+    err := json.Unmarshal([]byte(JSONData), &pathConfiguration)
     if err != nil {
         log.Println(err)
     }
-
     //var str = con.Paths.p["/go-http"]
-    var str = fmt.Sprintf("%v", pathConfiguration)
-    fmt.Println(pathConfiguration)
-    fmt.Fprintf(w, str) // отправляем данные на клиентскую сторону
+
+    var m = pathConfiguration.(map[string]interface{})
+    var paths = m["paths"]
+    return paths.(map[string]interface{})
+}
+
+func HomeRouterHandler(w http.ResponseWriter, r *http.Request) {
+
+    var sss = ParseJSON(ShortUrlPaths)
+    for _, value := range sss {
+        fmt.Println(value)
+    }
+    //var str = fmt.Sprintf("%v", paths)
+    //fmt.Println(paths)
+    //fmt.Fprintf(w, str) // отправляем данные на клиентскую сторону
 }
 
 func main() {
