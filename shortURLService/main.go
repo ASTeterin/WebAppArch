@@ -24,8 +24,8 @@ func ParsePath() {
 
 func HomeRouterHandler(w http.ResponseWriter, r *http.Request) {
     //var paths := ParsePath()
-    //var paths interface{}
-    var con PathConf
+    var pathConfiguration interface{}
+    //var con PathConf
     jsonData := []byte(`
     {
         "paths" : {
@@ -34,13 +34,14 @@ func HomeRouterHandler(w http.ResponseWriter, r *http.Request) {
         }
     }`)
 
-    err := json.Unmarshal(jsonData, &con)
+    err := json.Unmarshal(jsonData, &pathConfiguration)
     if err != nil {
         log.Println(err)
     }
 
-    var str = con.Paths.p["/go-http"]
-    fmt.Println(str)
+    //var str = con.Paths.p["/go-http"]
+    var str = fmt.Sprintf("%v", pathConfiguration)
+    fmt.Println(pathConfiguration)
     fmt.Fprintf(w, str) // отправляем данные на клиентскую сторону
 }
 
