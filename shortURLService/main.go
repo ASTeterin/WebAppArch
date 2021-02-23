@@ -5,10 +5,12 @@ import (
     "fmt"      // пакет для форматированного ввода вывода
     "log"      // пакет для логирования
     "net/http" // пакет для поддержки HTTP протокола
+    "strconv"
 )
 
+const port = 9000
 const JSONPathKey = "paths"
-
+const defaultURL = "https://golang.org/"
 const ShortUrlPaths = `
     {
         "paths" : {
@@ -34,17 +36,18 @@ func ParseJSON(JSONData string) map[string]interface{} {
 func RouterHandler(w http.ResponseWriter, r *http.Request) {
 
     var url = r.URL.Path
+    var urlForRed = defaultURL
     fmt.Println(url)
     var paths = ParseJSON(ShortUrlPaths)
     for key, value := range paths {
         if key == url {
             fmt.Println(value)
-            var urlForRed = fmt.Sprintf("%v", value)
-            http.Redirect(w, r, urlForRed, http.StatusSeeOther)
+            urlForRed = fmt.Sprintf("%v", value)
             break
         }
 
     }
+    http.Redirect(w, r, urlForRed, http.StatusSeeOther)
 
     //var str = fmt.Sprintf("%v", paths)
     //fmt.Println(paths)
@@ -52,8 +55,8 @@ func RouterHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-    http.HandleFunc("/", RouterHandler) // установим роутер
-    err := http.ListenAndServe(":9900", nil) // задаем слушать порт
+    http.HandleFunc("/", RouterHandler)           // установим роутер
+    err := http.ListenAndServe(":" + strconv.Itoa(port), nil) // задаем слушать порт
     if err != nil {
         log.Fatal("ListenAndServe: ", err)
     }
