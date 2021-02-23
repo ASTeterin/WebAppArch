@@ -2,9 +2,9 @@ package main
 
 import (
     "encoding/json"
-    "fmt"      // пакет для форматированного ввода вывода
-    "log"      // пакет для логирования
-    "net/http" // пакет для поддержки HTTP протокола
+    "fmt"
+    "log"
+    "net/http"
     "strconv"
 )
 
@@ -36,27 +36,22 @@ func ParseJSON(JSONData string) map[string]interface{} {
 func RouterHandler(w http.ResponseWriter, r *http.Request) {
 
     var url = r.URL.Path
-    var urlForRed = defaultURL
+    var urlForRedirect = defaultURL
     fmt.Println(url)
     var paths = ParseJSON(ShortUrlPaths)
     for key, value := range paths {
         if key == url {
             fmt.Println(value)
-            urlForRed = fmt.Sprintf("%v", value)
+            urlForRedirect = fmt.Sprintf("%v", value)
             break
         }
-
     }
-    http.Redirect(w, r, urlForRed, http.StatusSeeOther)
-
-    //var str = fmt.Sprintf("%v", paths)
-    //fmt.Println(paths)
-    //fmt.Fprintf(w, str) // отправляем данные на клиентскую сторону
+    http.Redirect(w, r, urlForRedirect, http.StatusSeeOther)
 }
 
 func main() {
-    http.HandleFunc("/", RouterHandler)           // установим роутер
-    err := http.ListenAndServe(":" + strconv.Itoa(port), nil) // задаем слушать порт
+    http.HandleFunc("/", RouterHandler)
+    err := http.ListenAndServe(":" + strconv.Itoa(port), nil)
     if err != nil {
         log.Fatal("ListenAndServe: ", err)
     }
