@@ -2,8 +2,6 @@ package transport
 
 import (
 	"encoding/json"
-	//"encoding/json"
-	//"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
@@ -41,26 +39,37 @@ type Order struct {
 }
 
 
-func getOrder(w http.ResponseWriter, _ *http.Request) {
-	var menuitem = Menu{
+func getOrder(w http.ResponseWriter, r *http.Request) {
+	/*var menuitem = Menu{
 		Id: "f290d1ce-6c234-4b31-90e6-d701748fo851",
 		Quantity: 1,
 	}
 	var order = Order{
 		Id:        "d290f1ee-6c54-4b01-90E6-d701748fo851",
 		Menuitems: menuitem,
-	}
-	b, _ := json.Marshal(order)
-	w.Header().Set("Content-type", "application/json; charset=UTF-8")
-	w.WriteHeader(http.StatusOK)
-	io.WriteString(w, string(b))
+	}*/
+	vars := mux.Vars(r)
+	id := vars["ID"]
+	//if id == order.Id {
+		b, err := json.Marshal(id)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-type", "application/json; charset=UTF-8")
+		w.WriteHeader(http.StatusOK)
+		if _, err = io.WriteString(w, string(b)); err != nil {
+			log.WithField("err", err).Error("write responce error")
+		}
+	//}
+
 }
 
 func Router() http.Handler {
 	r := mux.NewRouter()
 	s := r.PathPrefix("/api/v1").Subrouter()
 	s.HandleFunc("/hello-world", helloWorld).Methods(http.MethodGet)
-	s.HandleFunc("/orders", getOrder)
+	s.HandleFunc("/orders/{ID}", getOrder)
 	return logMiddleware(r)
 }
 
