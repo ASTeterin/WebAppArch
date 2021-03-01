@@ -36,22 +36,26 @@ type Menu struct {
 type Order struct {
 	Id        string `json:"id"`
 	Menuitems Menu`json:"menuitems"`
+	OrderedAtTimestamp int `json:"orderedAtTimestamp"`
+	Cost int `json:"cost"`
 }
 
 
 func getOrder(w http.ResponseWriter, r *http.Request) {
-	/*var menuitem = Menu{
-		Id: "f290d1ce-6c234-4b31-90e6-d701748fo851",
+	var menuitem = Menu{
+		Id:       "f290d1ce-6c234-4b31-90e6-d701748fo851",
 		Quantity: 1,
 	}
-	var order = Order{
+	var order = Order {
 		Id:        "d290f1ee-6c54-4b01-90E6-d701748fo851",
 		Menuitems: menuitem,
-	}*/
+		OrderedAtTimestamp: 1613758423,
+		Cost: 999,
+	}
 	vars := mux.Vars(r)
 	id := vars["ID"]
-	//if id == order.Id {
-		b, err := json.Marshal(id)
+	if id == order.Id {
+		b, err := json.Marshal(order)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -61,8 +65,7 @@ func getOrder(w http.ResponseWriter, r *http.Request) {
 		if _, err = io.WriteString(w, string(b)); err != nil {
 			log.WithField("err", err).Error("write responce error")
 		}
-	//}
-
+	}
 }
 
 func Router() http.Handler {
@@ -74,7 +77,6 @@ func Router() http.Handler {
 }
 
 func logMiddleware(h http.Handler) http.Handler {
-
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		startTime := time.Now()
 		endTime := time.Now()
@@ -87,7 +89,6 @@ func logMiddleware(h http.Handler) http.Handler {
 		h.ServeHTTP(w, r)
 		endTime = time.Now()
 	})
-
 }
 
 func getOrders(w http.ResponseWriter, _ *http.Request) {
