@@ -9,25 +9,7 @@ import (
 	"net/http"
 	"time"
 )
-/*
-var orders = `[{
-	"id": "d290f1ee-6c54-4b01-90E6-d701748fo851",
-	"menuitems": [{
-		"id": "f290d1ce-6c234-4b31-90e6-d701748fo851",
-		"quantity": 1
-	}]
-}]`
 
-var order = `[{	
-	"id": "d290f1ee-6c54-4b01-90E6-d701748fo851",
-	"menuitems": [{
-		"id": "f290d1ce-6c234-4b31-90e6-d701748fo851",
-		"quantity": 1
-	}]
-	"orderedAtTimestamp": 1613758423,
-	"cost": 999
-}]`
-*/
 type Menu struct {
 	Id       string `json:"id"`
 	Quantity int    `json:"quantity"`
@@ -67,6 +49,10 @@ func getOrders(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	sendResponse(w, b, err)
+}
+
+func sendResponse(w http.ResponseWriter, b []byte, err interface{}) {
 	w.Header().Set("Content-type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
 	if _, err = io.WriteString(w, string(b)); err != nil {
@@ -83,11 +69,7 @@ func getOrder(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		w.Header().Set("Content-type", "application/json; charset=UTF-8")
-		w.WriteHeader(http.StatusOK)
-		if _, err = io.WriteString(w, string(b)); err != nil {
-			log.WithField("err", err).Error("write responce error")
-		}
+		sendResponse(w, b, err)
 	}
 }
 
