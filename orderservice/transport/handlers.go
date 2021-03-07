@@ -1,50 +1,53 @@
 package transport
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"time"
 )
 
-type order struct {
+type Order struct {
 	Id    string `json:"id"`
-	Items []menuItem
+	MenuItems []MenuItem
 }
 
-type orderResponse struct {
-	order
+type OrderResponse struct {
+	Order
 	OrderedAtTimeStamp string `json:"orderedAtTimeStamp"`
 	Cost               int    `json:"cost"`
 }
 
-type menuItem struct {
+type MenuItem struct {
 	Id       string `json:"id"`
 	Quantity int    `json:"quantity"`
 }
 
-type orders struct {
-	Orders []order
+type Orders struct {
+	Orders []Order
 }
 
-var menuitem = menuItem{
+var menuitem = MenuItem{
 	Id:       "f290d1ce-6c234-4b31-90e6-d701748fo851",
 	Quantity: 1,
 }
 
-var newOrder = order{
+var newOrder = Order{
 	Id:  "d290f1ee-6c54-4b01-90E6-d701748fo851",
-	Items: []menuItem{
+	MenuItems: []MenuItem{
 		menuitem,
 	},
 }
 
-var testOrderResponse = orderResponse{
-	order: newOrder,
+var testOrderResponse = OrderResponse{
+	Order: newOrder,
 	OrderedAtTimeStamp: "1613758423",
 	Cost:               999,
 }
@@ -53,8 +56,8 @@ var driver = "mysql"
 var dataSourceName = "root:Qwerty123@/task"
 
 func getOrders(w http.ResponseWriter, r *http.Request) {
-	orders := orders{
-		Orders: []order {newOrder,
+	orders := Orders{
+		Orders: []Order {newOrder,
 		},
 	}
 	b, err := json.Marshal(orders)
@@ -86,6 +89,44 @@ func getOrder(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func createDBConnection(w http.ResponseWriter) {
+	db, err := sql.Open(driver, dataSourceName)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if err := db.Ping(); err != nil {
+		log.Fatal(err)
+	}
+	fmt.Fprint(w, "good connection")
+
+	var name string
+	err = db.QueryRow("select task_name from task where id_task = ?", 2).Scan(&name)
+	fmt.Fprint(w, "111 ", name)
+	if err != nil {
+		fmt.Fprint(w, name)
+	}
+	defer db.Close()
+}
+
+func createOrder(w http.ResponseWriter, r *http.Request) {
+	b, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	defer r.Body.Close()
+	var msg Order
+	err = json.Unmarshal(b, &msg)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	guid := uuid.New().String()
+	fmt.Fprint(w, msg, guid)
+}
+
+
 
 func Router() http.Handler {
 	r := mux.NewRouter()
@@ -93,7 +134,7 @@ func Router() http.Handler {
 	s.HandleFunc("/orders", getOrders)
 	s.HandleFunc("/hello-world", helloWorld).Methods(http.MethodGet)
 	s.HandleFunc("/order/{ID}", getOrder)
-	//s.HandleFunc("/order", createOrder).Methods(http.MethodPost)
+	s.HandleFunc("/order", createOrder).Methods(http.MethodPost)
 	return logMiddleware(r)
 }
 
