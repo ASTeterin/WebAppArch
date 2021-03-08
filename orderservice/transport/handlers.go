@@ -125,6 +125,14 @@ func  createOrder(w http.ResponseWriter, r *http.Request) {
 	defer s.Database.Close()
 }
 
+func deleteOrder(w http.ResponseWriter, r *http.Request) {
+	s := createDBConnection()
+	vars := mux.Vars(r)
+	id := vars["ID"]
+	s.DeleteOrder(id)
+	defer s.Database.Close()
+}
+
 
 
 func Router() http.Handler {
@@ -134,6 +142,7 @@ func Router() http.Handler {
 	s.HandleFunc("/hello-world", helloWorld).Methods(http.MethodGet)
 	s.HandleFunc("/order/{ID}", getOrder).Methods(http.MethodGet)
 	s.HandleFunc("/order", createOrder).Methods(http.MethodPost)
+	s.HandleFunc("/order/{ID}", deleteOrder).Methods(http.MethodDelete)
 	return logMiddleware(r)
 }
 

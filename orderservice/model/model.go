@@ -17,3 +17,9 @@ func (s *Server) CreateOrder(guid string, timestamp int, cost int) {
 		log.WithField("create_order", "failed")
 	}
 }
+
+func (s *Server) DeleteOrder(id string) error {
+	query := "DELETE FROM `order` WHERE id = ?"
+	_, err := s.Database.Exec(query, id)
+	return err
+}
