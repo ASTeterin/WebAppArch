@@ -12,7 +12,7 @@ type Server struct {
 
 func (s *Server) CreateOrder(guid string, timestamp int, cost int) {
 	query := "INSERT INTO `order` (id, created_timestamp, cost) VALUES (?, ?, ?)"
-	_, err := s.Database.Exec(query, guid, 100000, 1)
+	_, err := s.Database.Exec(query, guid, timestamp, cost)
 	if err != nil {
 		log.WithField("create_order", "failed")
 	}

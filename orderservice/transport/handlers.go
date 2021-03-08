@@ -11,8 +11,8 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"time"
 	"orderservice/model"
+	"time"
 )
 
 
@@ -120,7 +120,8 @@ func  createOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	guid := uuid.New().String()
-	s.CreateOrder(guid, 1234567, 999)
+	timestamp := int(time.Now().Unix())
+	s.CreateOrder(guid, timestamp, 999)
 	defer s.Database.Close()
 }
 
@@ -129,9 +130,9 @@ func  createOrder(w http.ResponseWriter, r *http.Request) {
 func Router() http.Handler {
 	r := mux.NewRouter()
 	s := r.PathPrefix("/api/v1").Subrouter()
-	s.HandleFunc("/orders", getOrders)
+	s.HandleFunc("/orders", getOrders).Methods(http.MethodGet)
 	s.HandleFunc("/hello-world", helloWorld).Methods(http.MethodGet)
-	s.HandleFunc("/order/{ID}", getOrder)
+	s.HandleFunc("/order/{ID}", getOrder).Methods(http.MethodGet)
 	s.HandleFunc("/order", createOrder).Methods(http.MethodPost)
 	return logMiddleware(r)
 }
