@@ -12,7 +12,9 @@ import (
 	"io/ioutil"
 	"net/http"
 	"time"
+	"orderservice/model"
 )
+
 
 type Order struct {
 	Id    string `json:"id"`
@@ -53,7 +55,8 @@ var testOrderResponse = OrderResponse{
 }
 
 var driver = "mysql"
-var dataSourceName = "root:Qwerty123@/task"
+var dataSourceName = "root:Qwerty123@/order"
+
 
 func getOrders(w http.ResponseWriter, r *http.Request) {
 	orders := Orders{
@@ -89,8 +92,9 @@ func getOrder(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func createDBConnection(w http.ResponseWriter) {
+func createDBConnection() model.Server{
 	db, err := sql.Open(driver, dataSourceName)
+
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -98,18 +102,11 @@ func createDBConnection(w http.ResponseWriter) {
 	if err := db.Ping(); err != nil {
 		log.Fatal(err)
 	}
-	fmt.Fprint(w, "good connection")
-
-	var name string
-	err = db.QueryRow("select task_name from task where id_task = ?", 2).Scan(&name)
-	fmt.Fprint(w, "111 ", name)
-	if err != nil {
-		fmt.Fprint(w, name)
-	}
-	defer db.Close()
+	return model.Server{Database: db}
 }
 
-func createOrder(w http.ResponseWriter, r *http.Request) {
+func  createOrder(w http.ResponseWriter, r *http.Request) {
+	s := createDBConnection()
 	b, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -123,7 +120,8 @@ func createOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	guid := uuid.New().String()
-	fmt.Fprint(w, msg, guid)
+	s.CreateOrder(guid, 1234567, 999)
+	defer s.Database.Close()
 }
 
 
