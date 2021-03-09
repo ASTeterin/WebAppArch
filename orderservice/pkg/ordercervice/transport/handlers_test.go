@@ -10,7 +10,7 @@ import (
 
 func TestList (t *testing.T) {
 	w := httptest.NewRecorder()
-	list(w, nil)
+	getOrders(w, nil)
 	response := w.Result()
 	if response.StatusCode != http.StatusOK {
 		t.Errorf("Status code is wrong. Hame %d, want %d.", response.StatusCode, http.StatusOK)
@@ -21,8 +21,9 @@ func TestList (t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	items := make([]OrderListItem, 10)
-	if err = json.Unmarshal(jsonString, &items); err != nil {
+	//items := make([]OrderListItem, 10)
+	var orders orders
+	if err = json.Unmarshal(jsonString, &orders); err != nil {
 		t.Errorf("Can't parse json response with error %v", err)
 	}
 }

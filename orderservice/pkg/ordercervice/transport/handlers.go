@@ -52,20 +52,20 @@ var driver = "mysql"
 var dataSourceName = "root:Qwerty123@/order"
 
 
-/*func getorders(w http.ResponseWriter, r *http.Request) {
+func getOrders(w http.ResponseWriter, r *http.Request) {
 	orders := orders{
-		orders: []order {neworder,
-		},
+		orders: []order {newOrder,
+			},
 	}
 	b, err := json.Marshal(orders)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	sendResponse(w, b, err)
+	sendResponse(w, b, http.StatusOK)
 }
-*/
-func getOrders(w http.ResponseWriter, r *http.Request) {
+
+/*func getOrders(w http.ResponseWriter, r *http.Request) {
 	s := createDBConnection()
 	orders := s.GetOrders()
 	b, err := json.Marshal(orders)
@@ -76,6 +76,8 @@ func getOrders(w http.ResponseWriter, r *http.Request) {
 	sendResponse(w, b, http.StatusOK)
 	defer s.Database.Close()
 }
+*/
+
 
 func sendResponse(w http.ResponseWriter, b []byte, status int) {
 	w.Header().Set("Content-type", "application/json; charset=UTF-8")
