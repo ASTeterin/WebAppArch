@@ -2,10 +2,9 @@ package main
 
 import (
 	"context"
-	"fmt"
 	log "github.com/sirupsen/logrus"
 	"net/http"
-	"orderservice/transport"
+	transport2 "orderservice/pkg/ordercervice/transport"
 	"os"
 	"os/signal"
 	"syscall"
@@ -28,16 +27,12 @@ func waitForKillSignall(killSignalChan <-chan  os.Signal) {
 }
 
 func startServer(serverURL string) *http.Server {
-	router := transport.Router()
+	router := transport2.Router()
 	srv := &http.Server{Addr: serverURL, Handler: router}
 	go func() {
 		log.Fatal(srv.ListenAndServe())
 	}()
 	return srv
-}
-
-func HelloHandler(w http.ResponseWriter, _ *http.Request) {
-	fmt.Fprint(w, "hello")
 }
 
 func main() {

@@ -11,56 +11,50 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"orderservice/model"
+	model2 "orderservice/pkg/ordercervice/model"
 	"time"
 )
 
 
-type Order struct {
+type order struct {
 	Id    string `json:"id"`
-	MenuItems []MenuItem
+	menuItems []menuItem
 }
 
-type OrderResponse struct {
-	Order
-	OrderedAtTimeStamp string `json:"orderedAtTimeStamp"`
+type orderResponse struct {
+	order
+	orderedAtTimeStamp string `json:"orderedAtTimeStamp"`
 	Cost               int    `json:"cost"`
 }
 
-type MenuItem struct {
+type menuItem struct {
 	Id       string `json:"id"`
 	Quantity int    `json:"quantity"`
 }
 
-type Orders struct {
-	Orders []Order
+type orders struct {
+	orders []order
 }
 
-var menuitem = MenuItem{
+var menuitem = menuItem{
 	Id:       "f290d1ce-6c234-4b31-90e6-d701748fo851",
 	Quantity: 1,
 }
 
-var newOrder = Order{
+var newOrder = order{
 	Id:  "d290f1ee-6c54-4b01-90E6-d701748fo851",
-	MenuItems: []MenuItem{
+	menuItems: []menuItem{
 		menuitem,
 	},
-}
-
-var testOrderResponse = OrderResponse{
-	Order: newOrder,
-	OrderedAtTimeStamp: "1613758423",
-	Cost:               999,
 }
 
 var driver = "mysql"
 var dataSourceName = "root:Qwerty123@/order"
 
 
-/*func getOrders(w http.ResponseWriter, r *http.Request) {
-	orders := Orders{
-		Orders: []Order {newOrder,
+/*func getorders(w http.ResponseWriter, r *http.Request) {
+	orders := orders{
+		orders: []order {neworder,
 		},
 	}
 	b, err := json.Marshal(orders)
@@ -75,32 +69,43 @@ func getOrders(w http.ResponseWriter, r *http.Request) {
 	s := createDBConnection()
 	orders := s.GetOrders()
 	b, err := json.Marshal(orders)
-	sendResponse(w, b, err)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	sendResponse(w, b, http.StatusOK)
 	defer s.Database.Close()
 }
 
-func sendResponse(w http.ResponseWriter, b []byte, err interface{}) {
+func sendResponse(w http.ResponseWriter, b []byte, status int) {
 	w.Header().Set("Content-type", "application/json; charset=UTF-8")
-	w.WriteHeader(http.StatusOK)
-	if _, err = io.WriteString(w, string(b)); err != nil {
+	w.WriteHeader(status)
+	if _, err := io.WriteString(w, string(b)); err != nil {
 		log.WithField("err", err).Error("write responce error")
 	}
 }
 
 func getOrder(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
+	if vars["ID"] == "" {
+		http.Error(w, "Not found", http.StatusNotFound)
+		return
+	}
 	id := vars["ID"]
+
 	if id == newOrder.Id {
 		b, err := json.Marshal(newOrder)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		sendResponse(w, b, err)
+		sendResponse(w, b, http.StatusOK)
+	} else {
+		sendResponse(w, []byte("Not found"), http.StatusNotFound)
 	}
 }
 
-func createDBConnection() model.Server{
+func createDBConnection() model2.Server {
 	db, err := sql.Open(driver, dataSourceName)
 
 	if err != nil {
@@ -110,7 +115,7 @@ func createDBConnection() model.Server{
 	if err := db.Ping(); err != nil {
 		log.Fatal(err)
 	}
-	return model.Server{Database: db}
+	return model2.Server{Database: db}
 }
 
 func  createOrder(w http.ResponseWriter, r *http.Request) {
@@ -121,7 +126,7 @@ func  createOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer r.Body.Close()
-	var msg Order
+	var msg order
 	err = json.Unmarshal(b, &msg)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)

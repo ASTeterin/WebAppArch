@@ -15,6 +15,7 @@ Content-Type: application/json
 }
 
 ###
-GET http://localhost:8000/api/v1/orders
+GET http://localhost:8000/api/v1/order/d290f1ee-6c54-4b01-90E6-d701748fo851
+
 ###
 DELETE http://localhost:8000/api/v1/order/0b199551-f6ba-46d4-9f16-cc30bfaf2b81

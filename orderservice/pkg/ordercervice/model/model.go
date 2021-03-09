@@ -10,15 +10,15 @@ type Server struct {
 	Database *sql.DB
 }
 
-type OrderResponse struct {
-	Order
+type orderResponse struct {
+	order
 	OrderedAtTimeStamp string `json:"orderedAtTimeStamp"`
 	Cost               int    `json:"cost"`
 }
 
-type Order struct {
+type order struct {
 	Id    string `json:"id"`
-	//MenuItems []MenuItem
+	//menuItems []menuItem
 }
 
 
@@ -38,19 +38,16 @@ func (s *Server) DeleteOrder(id string) {
 	}
 }
 
-func (s *Server) GetOrders() []OrderResponse{
+func (s *Server) GetOrders() []orderResponse {
 	query := "SELECT * FROM `order`"
 	rows, err := s.Database.Query(query)
 	if err != nil {
 		log.WithField("select_order", "failed")
 	}
 	defer rows.Close()
-	var orders []OrderResponse
-	var order OrderResponse
-	/*var id string
-	var timestamp int
-	var cost int
-*/
+	var orders []orderResponse
+	var order orderResponse
+
 	for rows.Next() {
 		err := rows.Scan(&order.Id, &order.OrderedAtTimeStamp, &order.Cost)
 		if err != nil{
@@ -58,7 +55,10 @@ func (s *Server) GetOrders() []OrderResponse{
 			continue
 		}
 		orders = append(orders, order)
-		//fmt.Println(id,  timestamp, cost)
 	}
 	return orders
+}
+
+func (s *Server) updateOrder() {
+
 }
