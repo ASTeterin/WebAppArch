@@ -11,14 +11,14 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	model2 "orderservice/pkg/ordercervice/model"
+	model2 "orderservice/pkg/orderservice/model"
 	"time"
 )
 
 
 type order struct {
 	Id    string `json:"id"`
-	menuItems []menuItem
+	menuItems []menuItem `json:"menuItems"`
 }
 
 type orderResponse struct {
@@ -31,6 +31,8 @@ type menuItem struct {
 	Id       string `json:"id"`
 	Quantity int    `json:"quantity"`
 }
+
+
 
 type orders struct {
 	orders []order
@@ -128,8 +130,9 @@ func  createOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer r.Body.Close()
-	var msg order
+	var msg model2.MenuItems
 	err = json.Unmarshal(b, &msg)
+	fmt.Println(msg)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -137,7 +140,7 @@ func  createOrder(w http.ResponseWriter, r *http.Request) {
 	guid := uuid.New().String()
 	timestamp := int(time.Now().Unix())
 	cost := 1000
-	s.CreateOrder(guid, timestamp, cost)
+	s.CreateOrder(guid, timestamp, cost, msg.MenuItems)
 	defer s.Database.Close()
 }
 
@@ -165,15 +168,13 @@ func Router() http.Handler {
 func logMiddleware(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		startTime := time.Now()
-		endTime := time.Now()
 		log.WithFields(log.Fields{
 			"method":     r.Method,
 			"url":        r.URL,
 			"remoteAddr": r.RemoteAddr,
-			"time":       int(endTime.Sub(startTime)),
+			"duration":    time.Since(startTime).String(),
 		}).Info("got a new request")
 		h.ServeHTTP(w, r)
-		endTime = time.Now()
 	})
 }
 

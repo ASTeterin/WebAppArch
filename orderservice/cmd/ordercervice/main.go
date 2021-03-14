@@ -4,11 +4,12 @@ import (
 	"context"
 	log "github.com/sirupsen/logrus"
 	"net/http"
-	transport2 "orderservice/pkg/ordercervice/transport"
+	transport2 "orderservice/pkg/orderservice/transport"
 	"os"
 	"os/signal"
 	"syscall"
 )
+
 
 func getKillSignalChan() chan os.Signal {
 	osKillSignalchan := make (chan os.Signal, 1)
@@ -35,18 +36,26 @@ func startServer(serverURL string) *http.Server {
 	return srv
 }
 
+
 func main() {
+
 	log.SetFormatter(&log.JSONFormatter{})
 	file, err := os.OpenFile("my.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
 	if err == nil {
 		log.SetOutput(file)
 		defer file.Close()
 	}
-	serverUrl := ":8000"
-	log.WithFields(log.Fields{"url": serverUrl}).Info("starting server")
-	killSignalChan := getKillSignalChan()
-	srv := startServer(serverUrl)
 
-	waitForKillSignall(killSignalChan)
-	srv.Shutdown(context.Background())
+	conf, err := parseEnv()
+	//conf, error := parseEnv()
+	if err == nil {
+	//serverUrl := ":8000"
+		log.WithFields(log.Fields{"url": conf.SrvRESTAddress}).Info("starting server")
+		killSignalChan := getKillSignalChan()
+		srv := startServer(conf.SrvRESTAddress)
+
+		waitForKillSignall(killSignalChan)
+		srv.Shutdown(context.Background())
+	}
+	log.Println("can't load config")
 }

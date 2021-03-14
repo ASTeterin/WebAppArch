@@ -18,15 +18,39 @@ type orderResponse struct {
 
 type order struct {
 	Id    string `json:"id"`
-	//menuItems []menuItem
+	menuItems []menuItem
+}
+
+type menuItem struct {
+	Id       string `json:"id"`
+	Quantity int    `json:"quantity"`
+}
+
+type MenuItems struct {
+	MenuItems  []menuItem `json:"menuItems"`
 }
 
 
-func (s *Server) CreateOrder(guid string, timestamp int, cost int) {
+func (s *Server) CreateOrder(guid string, timestamp int, cost int, menuItems []menuItem) {
 	query := "INSERT INTO `order` (id, created_timestamp, cost) VALUES (?, ?, ?)"
 	_, err := s.Database.Exec(query, guid, timestamp, cost)
 	if err != nil {
 		log.WithField("create_order", "failed")
+	}
+	for _, item := range  menuItems{
+
+		query = "INSERT INTO `menu_item` (idmenu_item, quantity) VALUES (?, ?)"
+		result, err := s.Database.Exec(query, item.Id, item.Quantity)
+		menuItemId, _ := result.LastInsertId()
+		if err != nil {
+			log.WithField("create_order", "failed")
+		}
+		fmt.Println(item)
+		query = "INSERT INTO `item_in_order` (order_id, menu_item_id) VALUES (?, ?)"
+		_, err = s.Database.Exec(query, guid, int(menuItemId))
+		if err != nil {
+			log.WithField("create_order", "failed")
+		}
 	}
 }
 
