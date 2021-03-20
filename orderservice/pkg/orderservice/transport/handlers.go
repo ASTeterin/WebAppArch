@@ -13,7 +13,7 @@ import (
 	"net/http"
 	model2 "orderservice/pkg/orderservice/model"
 	"time"
-)
+	)
 
 
 type order struct {
@@ -111,11 +111,9 @@ func getOrder(w http.ResponseWriter, r *http.Request) {
 
 func createDBConnection() model2.Server {
 	db, err := sql.Open(driver, dataSourceName)
-
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	if err := db.Ping(); err != nil {
 		log.Fatal(err)
 	}

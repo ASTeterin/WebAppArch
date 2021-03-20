@@ -7,6 +7,9 @@ const appID = "orderservice"
 
 type config struct {
 	SrvRESTAddress string `envconfig:"serve_rest_address" default:":8000"`
+	DBName           string `envconfig:"db_name"`
+	DBUser           string `envconfig:"db_user"`
+	DBPass           string `envconfig:"db_password"`
 }
 
 func parseEnv() (*config, error) {

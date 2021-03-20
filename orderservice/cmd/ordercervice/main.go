@@ -47,7 +47,6 @@ func main() {
 	}
 
 	conf, err := parseEnv()
-	//conf, error := parseEnv()
 	if err == nil {
 	//serverUrl := ":8000"
 		log.WithFields(log.Fields{"url": conf.SrvRESTAddress}).Info("starting server")
