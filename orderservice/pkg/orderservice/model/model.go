@@ -90,7 +90,6 @@ func (s *Server) DeleteOrder(id string) {
 	_, err = s.Database.Exec(query, id)
 	if err != nil {
 		log.WithField("delete item_in_order", "failed")
-
 	}
 }
 
@@ -115,6 +114,55 @@ func (s *Server) GetOrders() []orderResponse {
 	return orders
 }
 
-func (s *Server) updateOrder() {
+
+
+func (s *Server) UpdateOrder(id string, timestamp int, cost int,  menuItems []menuItem) {
+	fmt.Printf(id)
+	query := "UPDATE `order` SET created_timestamp = ?, cost = ? WHERE id = ?"
+	_, err := s.Database.Exec(query, timestamp, cost, id)
+	if err != nil {
+		log.WithField("create_order", "failed")
+	}
+
+	query = "SELECT menu_item_id FROM `item_in_order` WHERE order_id = ?"
+	rows, err := s.Database.Query(query, id)
+	if err != nil {
+		fmt.Println("no rows")
+	}
+
+	defer rows.Close()
+
+	for rows.Next(){
+		var menuItemId int
+		err = rows.Scan(&menuItemId)
+		fmt.Print(menuItemId, ' ')
+		if err != nil {
+			log.WithField("delete menu_item", "failed")
+			return
+		}
+		query = "DELETE FROM `menu_item` WHERE id = ?"
+		_, err = s.Database.Exec(query, menuItemId)
+		if err != nil {
+			log.WithField("delete menu_item", "failed")
+			return
+		}
+
+	}
+
+	for _, item := range  menuItems{
+
+		query = "INSERT INTO `menu_item` (idmenu_item, quantity) VALUES (?, ?)"
+		result, err := s.Database.Exec(query, item.Id, item.Quantity)
+		menuItemId, _ := result.LastInsertId()
+		if err != nil {
+			log.WithField("create_order", "failed")
+		}
+		fmt.Println(item)
+		query = "INSERT INTO `item_in_order` (order_id, menu_item_id) VALUES (?, ?)"
+		_, err = s.Database.Exec(query, id, int(menuItemId))
+		if err != nil {
+			log.WithField("create_order", "failed")
+		}
+	}
 
 }

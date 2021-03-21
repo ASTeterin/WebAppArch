@@ -53,7 +53,7 @@ var newOrder = order{
 var driver = "mysql"
 var dataSourceName = "root:Qwerty123@/order"
 
-
+/*
 func getOrders(w http.ResponseWriter, r *http.Request) {
 	orders := orders{
 		orders: []order {newOrder,
@@ -66,8 +66,9 @@ func getOrders(w http.ResponseWriter, r *http.Request) {
 	}
 	sendResponse(w, b, http.StatusOK)
 }
+*/
 
-/*func getOrders(w http.ResponseWriter, r *http.Request) {
+func getOrders(w http.ResponseWriter, r *http.Request) {
 	s := createDBConnection()
 	orders := s.GetOrders()
 	b, err := json.Marshal(orders)
@@ -78,7 +79,7 @@ func getOrders(w http.ResponseWriter, r *http.Request) {
 	sendResponse(w, b, http.StatusOK)
 	defer s.Database.Close()
 }
-*/
+
 
 
 func sendResponse(w http.ResponseWriter, b []byte, status int) {
@@ -87,6 +88,32 @@ func sendResponse(w http.ResponseWriter, b []byte, status int) {
 	if _, err := io.WriteString(w, string(b)); err != nil {
 		log.WithField("err", err).Error("write responce error")
 	}
+}
+
+func updateOrder(w http.ResponseWriter, r *http.Request)  {
+	vars := mux.Vars(r)
+	if vars["ID"] == "" {
+		http.Error(w, "Not found", http.StatusNotFound)
+		return
+	}
+	id := vars["ID"]
+	s := createDBConnection()
+	b, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	defer r.Body.Close()
+	var msg model2.MenuItems
+	err = json.Unmarshal(b, &msg)
+	fmt.Println(msg)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	timestamp := int(time.Now().Unix())
+	s.UpdateOrder(id, timestamp, 100, msg.MenuItems)
 }
 
 func getOrder(w http.ResponseWriter, r *http.Request) {
@@ -152,6 +179,7 @@ func deleteOrder(w http.ResponseWriter, r *http.Request) {
 
 
 
+
 func Router() http.Handler {
 	r := mux.NewRouter()
 	s := r.PathPrefix("/api/v1").Subrouter()
@@ -160,6 +188,7 @@ func Router() http.Handler {
 	s.HandleFunc("/order/{ID}", getOrder).Methods(http.MethodGet)
 	s.HandleFunc("/order", createOrder).Methods(http.MethodPost)
 	s.HandleFunc("/order/{ID}", deleteOrder).Methods(http.MethodDelete)
+	s.HandleFunc("/order/{ID}", updateOrder).Methods(http.MethodPost)
 	return logMiddleware(r)
 }
 
