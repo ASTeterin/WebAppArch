@@ -27,12 +27,12 @@ Content-Type: application/json
 {
   "menuItems": [
     {
-      "id": "3fa85f64-5717-4562-b3fc-2c963f66afaaa",
-      "quantity": 3
+      "id": "3fa85f64-5717-4562-b3fc-2c963f66afbbb",
+      "quantity": 30
     },
     {
-      "id": "3fa85f64-5717-4562-b3fc-2c963f66a555",
-      "quantity": 3
+      "id": "3fa85f64-5717-4562-b3fc-2c963f66a111",
+      "quantity": 30
     }
   ]
 }
