@@ -54,14 +54,8 @@ func (s *Server) CreateOrder(guid string, timestamp int, cost int, menuItems []m
 	}
 }
 
-func (s *Server) DeleteOrder(id string) {
-	query := "DELETE FROM `order` WHERE id = ?"
-	_, err := s.Database.Exec(query, id)
-	if err != nil {
-		log.WithField("delete_order", "failed")
-	}
-
-	query = "SELECT menu_item_id FROM `item_in_order` WHERE order_id = ?"
+func deleteOrderparam(s *Server, id string) {
+	query := "SELECT menu_item_id FROM `item_in_order` WHERE order_id = ?"
 	rows, err := s.Database.Query(query, id)
 	if err != nil {
 		fmt.Println("no rows")
@@ -71,11 +65,11 @@ func (s *Server) DeleteOrder(id string) {
 
 	for rows.Next(){
 		var menuItemId int
- 		err = rows.Scan(&menuItemId)
+		err = rows.Scan(&menuItemId)
 		fmt.Print(menuItemId, ' ')
- 		if err != nil {
+		if err != nil {
 			log.WithField("delete menu_item", "failed")
- 			return
+			return
 		}
 		query = "DELETE FROM `menu_item` WHERE id = ?"
 		_, err = s.Database.Exec(query, menuItemId)
@@ -91,6 +85,15 @@ func (s *Server) DeleteOrder(id string) {
 	if err != nil {
 		log.WithField("delete item_in_order", "failed")
 	}
+}
+
+func (s *Server) DeleteOrder(id string) {
+	query := "DELETE FROM `order` WHERE id = ?"
+	_, err := s.Database.Exec(query, id)
+	if err != nil {
+		log.WithField("delete_order", "failed")
+	}
+	deleteOrderparam(s, id)
 }
 
 func (s *Server) GetOrders() []orderResponse {
