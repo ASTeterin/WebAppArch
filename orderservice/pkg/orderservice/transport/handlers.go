@@ -20,12 +20,12 @@ type order struct {
 	Id    string `json:"id"`
 	menuItems []menuItem `json:"menuItems"`
 }
-
+/*
 type orderResponse struct {
 	order
 	orderedAtTimeStamp string `json:"orderedAtTimeStamp"`
 	Cost               int    `json:"cost"`
-}
+}*/
 
 type menuItem struct {
 	Id       string `json:"id"`
@@ -117,15 +117,18 @@ func updateOrder(w http.ResponseWriter, r *http.Request)  {
 }
 
 func getOrder(w http.ResponseWriter, r *http.Request) {
+	//var ord model2.OrderResponse
 	vars := mux.Vars(r)
 	if vars["ID"] == "" {
 		http.Error(w, "Not found", http.StatusNotFound)
 		return
 	}
 	id := vars["ID"]
+	s := createDBConnection()
+	ord := s.GetOrder(id)
 
-	if id == newOrder.Id {
-		b, err := json.Marshal(newOrder)
+	if ord.Id != "" {
+		b, err := json.Marshal(ord)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
