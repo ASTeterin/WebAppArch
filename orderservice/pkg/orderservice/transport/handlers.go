@@ -1,7 +1,6 @@
 package transport
 
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
@@ -13,13 +12,13 @@ import (
 	"net/http"
 	model2 "orderservice/pkg/orderservice/model"
 	"time"
-	)
-
+)
 
 type order struct {
-	Id    string `json:"id"`
+	Id        string     `json:"id"`
 	menuItems []menuItem `json:"menuItems"`
 }
+
 /*
 type orderResponse struct {
 	order
@@ -32,8 +31,6 @@ type menuItem struct {
 	Quantity int    `json:"quantity"`
 }
 
-
-
 type orders struct {
 	orders []order
 }
@@ -44,14 +41,15 @@ var menuitem = menuItem{
 }
 
 var newOrder = order{
-	Id:  "d290f1ee-6c54-4b01-90E6-d701748fo851",
+	Id: "d290f1ee-6c54-4b01-90E6-d701748fo851",
 	menuItems: []menuItem{
 		menuitem,
 	},
 }
 
-var driver = "mysql"
-var dataSourceName = "root:Qwerty123@/order"
+type OrderRepository struct {
+	OrderService model2.OrderServiceInterface
+}
 
 /*
 func getOrders(w http.ResponseWriter, r *http.Request) {
@@ -68,19 +66,42 @@ func getOrders(w http.ResponseWriter, r *http.Request) {
 }
 */
 
-func getOrders(w http.ResponseWriter, r *http.Request) {
-	s := createDBConnection()
-	orders := s.GetOrders()
+func Router(orderService *OrderRepository) http.Handler {
+	r := mux.NewRouter()
+	s := r.PathPrefix("/api/v1").Subrouter()
+	s.HandleFunc("/orders", orderService.GetOrders).Methods(http.MethodGet)
+	s.HandleFunc("/hello-world", helloWorld).Methods(http.MethodGet)
+	s.HandleFunc("/order/{ID}", orderService.GetOrder).Methods(http.MethodGet)
+	s.HandleFunc("/order", orderService.CreateOrder).Methods(http.MethodPost)
+	s.HandleFunc("/order/{ID}", orderService.deleteOrder).Methods(http.MethodDelete)
+	s.HandleFunc("/order/{ID}", orderService.UpdeteOrder).Methods(http.MethodPost)
+	return logMiddleware(r)
+}
+
+func logMiddleware(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		startTime := time.Now()
+		log.WithFields(log.Fields{
+			"method":     r.Method,
+			"url":        r.URL,
+			"remoteAddr": r.RemoteAddr,
+			"duration":   time.Since(startTime).String(),
+		}).Info("got a new request")
+		h.ServeHTTP(w, r)
+	})
+}
+
+func (orderService *OrderRepository) GetOrders(w http.ResponseWriter, r *http.Request) {
+	//s := createDBConnection()
+	orders := orderService.OrderService.GetOrders()
 	b, err := json.Marshal(orders)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	sendResponse(w, b, http.StatusOK)
-	defer s.Database.Close()
+	//defer s.Database.Close()
 }
-
-
 
 func sendResponse(w http.ResponseWriter, b []byte, status int) {
 	w.Header().Set("Content-type", "application/json; charset=UTF-8")
@@ -90,14 +111,14 @@ func sendResponse(w http.ResponseWriter, b []byte, status int) {
 	}
 }
 
-func updateOrder(w http.ResponseWriter, r *http.Request)  {
+func (orderService *OrderRepository) UpdeteOrder(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	if vars["ID"] == "" {
 		http.Error(w, "Not found", http.StatusNotFound)
 		return
 	}
 	id := vars["ID"]
-	s := createDBConnection()
+	//s := createDBConnection()
 	b, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -113,10 +134,10 @@ func updateOrder(w http.ResponseWriter, r *http.Request)  {
 	}
 
 	timestamp := int(time.Now().Unix())
-	s.UpdateOrder(id, timestamp, 100, msg.MenuItems)
+	orderService.OrderService.UpdateOrder(id, timestamp, 100, msg.MenuItems)
 }
 
-func getOrder(w http.ResponseWriter, r *http.Request) {
+func (orderService *OrderRepository) GetOrder(w http.ResponseWriter, r *http.Request) {
 	//var ord model2.OrderResponse
 	vars := mux.Vars(r)
 	if vars["ID"] == "" {
@@ -124,8 +145,8 @@ func getOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	id := vars["ID"]
-	s := createDBConnection()
-	ord := s.GetOrder(id)
+	//s := createDBConnection()
+	ord := orderService.OrderService.GetOrder(id)
 
 	if ord.Id != "" {
 		b, err := json.Marshal(ord)
@@ -139,19 +160,8 @@ func getOrder(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func createDBConnection() model2.Server {
-	db, err := sql.Open(driver, dataSourceName)
-	if err != nil {
-		log.Fatal(err)
-	}
-	if err := db.Ping(); err != nil {
-		log.Fatal(err)
-	}
-	return model2.Server{Database: db}
-}
-
-func  createOrder(w http.ResponseWriter, r *http.Request) {
-	s := createDBConnection()
+func (orderService *OrderRepository) CreateOrder(w http.ResponseWriter, r *http.Request) {
+	//s := createDBConnection()
 	b, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -168,44 +178,16 @@ func  createOrder(w http.ResponseWriter, r *http.Request) {
 	guid := uuid.New().String()
 	timestamp := int(time.Now().Unix())
 	cost := 1000
-	s.CreateOrder(guid, timestamp, cost, msg.MenuItems)
-	defer s.Database.Close()
+	orderService.OrderService.CreateOrder(guid, timestamp, cost, msg.MenuItems)
+	//defer s.Database.Close()
 }
 
-func deleteOrder(w http.ResponseWriter, r *http.Request) {
-	s := createDBConnection()
+func (orderService *OrderRepository) deleteOrder(w http.ResponseWriter, r *http.Request) {
+	//s := createDBConnection()
 	vars := mux.Vars(r)
 	id := vars["ID"]
-	s.DeleteOrder(id)
-	defer s.Database.Close()
-}
-
-
-
-
-func Router() http.Handler {
-	r := mux.NewRouter()
-	s := r.PathPrefix("/api/v1").Subrouter()
-	s.HandleFunc("/orders", getOrders).Methods(http.MethodGet)
-	s.HandleFunc("/hello-world", helloWorld).Methods(http.MethodGet)
-	s.HandleFunc("/order/{ID}", getOrder).Methods(http.MethodGet)
-	s.HandleFunc("/order", createOrder).Methods(http.MethodPost)
-	s.HandleFunc("/order/{ID}", deleteOrder).Methods(http.MethodDelete)
-	s.HandleFunc("/order/{ID}", updateOrder).Methods(http.MethodPost)
-	return logMiddleware(r)
-}
-
-func logMiddleware(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		startTime := time.Now()
-		log.WithFields(log.Fields{
-			"method":     r.Method,
-			"url":        r.URL,
-			"remoteAddr": r.RemoteAddr,
-			"duration":    time.Since(startTime).String(),
-		}).Info("got a new request")
-		h.ServeHTTP(w, r)
-	})
+	orderService.OrderService.DeleteOrder(id)
+	//defer s.Database.Close()
 }
 
 func helloWorld(w http.ResponseWriter, _ *http.Request) {

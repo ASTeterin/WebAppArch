@@ -6,14 +6,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type Server struct {
+type DBServer struct {
 	Database *sql.DB
-}
-
-type orderDTO struct {
-	Id    string `json:"id"`
-	OrderedAtTimeStamp string `json:"orderedAtTimeStamp"`
-	Cost               int    `json:"cost"`
 }
 
 type OrderResponse struct {
@@ -23,7 +17,7 @@ type OrderResponse struct {
 }
 
 type order struct {
-	Id    string `json:"id"`
+	Id        string `json:"id"`
 	menuItems []menuItem
 }
 
@@ -33,17 +27,28 @@ type menuItem struct {
 }
 
 type MenuItems struct {
-	MenuItems  []menuItem `json:"menuItems"`
+	MenuItems []menuItem `json:"menuItems"`
 }
 
+type OrderServiceInterface interface {
+	CreateOrder(guid string, timestamp int, cost int, menuItems []menuItem)
+	DeleteOrder(id string)
+	GetOrders() []OrderResponse
+	GetOrder(id string) OrderResponse
+	UpdateOrder(id string, timestamp int, cost int, menuItems []menuItem)
+}
 
-func (s *Server) CreateOrder(guid string, timestamp int, cost int, menuItems []menuItem) {
+func CreateOrderServiceInterface(db *sql.DB) OrderServiceInterface {
+	return &DBServer{Database: db}
+}
+
+func (s *DBServer) CreateOrder(guid string, timestamp int, cost int, menuItems []menuItem) {
 	query := "INSERT INTO `order` (id, created_timestamp, cost) VALUES (?, ?, ?)"
 	_, err := s.Database.Exec(query, guid, timestamp, cost)
 	if err != nil {
 		log.WithField("create_order", "failed")
 	}
-	for _, item := range  menuItems{
+	for _, item := range menuItems {
 
 		query = "INSERT INTO `menu_item` (idmenu_item, quantity) VALUES (?, ?)"
 		result, err := s.Database.Exec(query, item.Id, item.Quantity)
@@ -60,7 +65,7 @@ func (s *Server) CreateOrder(guid string, timestamp int, cost int, menuItems []m
 	}
 }
 
-func deleteOrderParam(s *Server, id string) {
+func deleteOrderParam(s *DBServer, id string) {
 	query := "SELECT menu_item_id FROM `item_in_order` WHERE order_id = ?"
 	rows, err := s.Database.Query(query, id)
 	if err != nil {
@@ -69,7 +74,7 @@ func deleteOrderParam(s *Server, id string) {
 
 	defer rows.Close()
 
-	for rows.Next(){
+	for rows.Next() {
 		var menuItemId int
 		err = rows.Scan(&menuItemId)
 		fmt.Print(menuItemId, ' ')
@@ -93,7 +98,7 @@ func deleteOrderParam(s *Server, id string) {
 	}
 }
 
-func (s *Server) DeleteOrder(id string) {
+func (s *DBServer) DeleteOrder(id string) {
 	query := "DELETE FROM `order` WHERE id = ?"
 	_, err := s.Database.Exec(query, id)
 	if err != nil {
@@ -102,7 +107,7 @@ func (s *Server) DeleteOrder(id string) {
 	deleteOrderParam(s, id)
 }
 
-func (s *Server) GetOrders() []OrderResponse {
+func (s *DBServer) GetOrders() []OrderResponse {
 	query := "SELECT * FROM `order`"
 	rows, err := s.Database.Query(query)
 	if err != nil {
@@ -114,7 +119,7 @@ func (s *Server) GetOrders() []OrderResponse {
 
 	for rows.Next() {
 		err := rows.Scan(&order.Id, &order.OrderedAtTimeStamp, &order.Cost)
-		if err != nil{
+		if err != nil {
 			fmt.Println(err)
 			continue
 		}
@@ -123,7 +128,7 @@ func (s *Server) GetOrders() []OrderResponse {
 	return orders
 }
 
-func (s *Server) GetOrder(id string)  OrderResponse{
+func (s *DBServer) GetOrder(id string) OrderResponse {
 	//var orderResponse orderResponse
 	/*var time string
 	var cost int
@@ -134,7 +139,7 @@ func (s *Server) GetOrder(id string)  OrderResponse{
 		return
 	}
 	fmt.Printf(string(cost), ' ')
-*/
+	*/
 	var orderResponse OrderResponse
 	query := "SELECT menu_item_id FROM item_in_order WHERE order_id = ?"
 	rows, err := s.Database.Query(query, id)
@@ -144,7 +149,7 @@ func (s *Server) GetOrder(id string)  OrderResponse{
 	defer rows.Close()
 
 	menuItems := make([]menuItem, 0)
-	for rows.Next(){
+	for rows.Next() {
 		//fmt.Println("11111")
 		var currentMenuItem menuItem
 		var menuItemId int
@@ -168,8 +173,8 @@ func (s *Server) GetOrder(id string)  OrderResponse{
 	return orderResponse
 }
 
-func createMenuItemsInOrder(menuItems []menuItem, id string, s *Server) {
-	for _, item := range  menuItems{
+func createMenuItemsInOrder(menuItems []menuItem, id string, s *DBServer) {
+	for _, item := range menuItems {
 
 		query := "INSERT INTO `menu_item` (idmenu_item, quantity) VALUES (?, ?)"
 		result, err := s.Database.Exec(query, item.Id, item.Quantity)
@@ -186,7 +191,7 @@ func createMenuItemsInOrder(menuItems []menuItem, id string, s *Server) {
 	}
 }
 
-func (s *Server) UpdateOrder(id string, timestamp int, cost int,  menuItems []menuItem) {
+func (s *DBServer) UpdateOrder(id string, timestamp int, cost int, menuItems []menuItem) {
 	fmt.Printf(id)
 	query := "UPDATE `order` SET created_timestamp = ?, cost = ? WHERE id = ?"
 	_, err := s.Database.Exec(query, timestamp, cost, id)
@@ -197,5 +202,3 @@ func (s *Server) UpdateOrder(id string, timestamp int, cost int,  menuItems []me
 	deleteOrderParam(s, id)
 	createMenuItemsInOrder(menuItems, id, s)
 }
-
-
