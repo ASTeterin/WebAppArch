@@ -129,17 +129,6 @@ func (s *DBServer) GetOrders() []OrderResponse {
 }
 
 func (s *DBServer) GetOrder(id string) OrderResponse {
-	//var orderResponse orderResponse
-	/*var time string
-	var cost int
-	query := "SELECT creared_timestamp, cost FROM `order` WHERE order_id = ?"
-	err := s.Database.QueryRow(query, id).Scan(&time, &cost)
-	if err != nil {
-		log.WithField("find_order", "failed")
-		return
-	}
-	fmt.Printf(string(cost), ' ')
-	*/
 	var orderResponse OrderResponse
 	query := "SELECT menu_item_id FROM item_in_order WHERE order_id = ?"
 	rows, err := s.Database.Query(query, id)
@@ -150,7 +139,6 @@ func (s *DBServer) GetOrder(id string) OrderResponse {
 
 	menuItems := make([]menuItem, 0)
 	for rows.Next() {
-		//fmt.Println("11111")
 		var currentMenuItem menuItem
 		var menuItemId int
 		err = rows.Scan(&menuItemId)

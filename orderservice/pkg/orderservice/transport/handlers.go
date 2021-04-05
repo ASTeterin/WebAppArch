@@ -19,13 +19,6 @@ type order struct {
 	menuItems []menuItem `json:"menuItems"`
 }
 
-/*
-type orderResponse struct {
-	order
-	orderedAtTimeStamp string `json:"orderedAtTimeStamp"`
-	Cost               int    `json:"cost"`
-}*/
-
 type menuItem struct {
 	Id       string `json:"id"`
 	Quantity int    `json:"quantity"`
@@ -50,21 +43,6 @@ var newOrder = order{
 type OrderRepository struct {
 	OrderService model2.OrderServiceInterface
 }
-
-/*
-func getOrders(w http.ResponseWriter, r *http.Request) {
-	orders := orders{
-		orders: []order {newOrder,
-			},
-	}
-	b, err := json.Marshal(orders)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	sendResponse(w, b, http.StatusOK)
-}
-*/
 
 func Router(orderService *OrderRepository) http.Handler {
 	r := mux.NewRouter()
@@ -92,7 +70,6 @@ func logMiddleware(h http.Handler) http.Handler {
 }
 
 func (orderService *OrderRepository) GetOrders(w http.ResponseWriter, r *http.Request) {
-	//s := createDBConnection()
 	orders := orderService.OrderService.GetOrders()
 	b, err := json.Marshal(orders)
 	if err != nil {
@@ -100,7 +77,6 @@ func (orderService *OrderRepository) GetOrders(w http.ResponseWriter, r *http.Re
 		return
 	}
 	sendResponse(w, b, http.StatusOK)
-	//defer s.Database.Close()
 }
 
 func sendResponse(w http.ResponseWriter, b []byte, status int) {
@@ -118,7 +94,6 @@ func (orderService *OrderRepository) UpdeteOrder(w http.ResponseWriter, r *http.
 		return
 	}
 	id := vars["ID"]
-	//s := createDBConnection()
 	b, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -138,14 +113,12 @@ func (orderService *OrderRepository) UpdeteOrder(w http.ResponseWriter, r *http.
 }
 
 func (orderService *OrderRepository) GetOrder(w http.ResponseWriter, r *http.Request) {
-	//var ord model2.OrderResponse
 	vars := mux.Vars(r)
 	if vars["ID"] == "" {
 		http.Error(w, "Not found", http.StatusNotFound)
 		return
 	}
 	id := vars["ID"]
-	//s := createDBConnection()
 	ord := orderService.OrderService.GetOrder(id)
 
 	if ord.Id != "" {
@@ -161,7 +134,6 @@ func (orderService *OrderRepository) GetOrder(w http.ResponseWriter, r *http.Req
 }
 
 func (orderService *OrderRepository) CreateOrder(w http.ResponseWriter, r *http.Request) {
-	//s := createDBConnection()
 	b, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -179,15 +151,12 @@ func (orderService *OrderRepository) CreateOrder(w http.ResponseWriter, r *http.
 	timestamp := int(time.Now().Unix())
 	cost := 1000
 	orderService.OrderService.CreateOrder(guid, timestamp, cost, msg.MenuItems)
-	//defer s.Database.Close()
 }
 
 func (orderService *OrderRepository) deleteOrder(w http.ResponseWriter, r *http.Request) {
-	//s := createDBConnection()
 	vars := mux.Vars(r)
 	id := vars["ID"]
 	orderService.OrderService.DeleteOrder(id)
-	//defer s.Database.Close()
 }
 
 func helloWorld(w http.ResponseWriter, _ *http.Request) {

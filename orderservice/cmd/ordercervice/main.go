@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	model2 "orderservice/pkg/orderservice/model"
@@ -12,8 +13,30 @@ import (
 	"syscall"
 )
 
-var driver = "mysql"
-var dataSourceName = "root:Qwerty123@/order"
+func main() {
+
+	log.SetFormatter(&log.JSONFormatter{})
+	file, err := os.OpenFile("my.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
+	if err == nil {
+		log.SetOutput(file)
+		defer file.Close()
+	}
+
+	conf, err := parseEnv()
+
+	if err == nil {
+
+		s := createDBConnection(conf)
+
+		log.WithFields(log.Fields{"url": conf.SrvRESTAddress}).Info("starting server")
+		killSignalChan := getKillSignalChan()
+		srv := startServer(conf.SrvRESTAddress, &s)
+
+		waitForKillSignall(killSignalChan)
+		srv.Shutdown(context.Background())
+	}
+	log.Println("can't load config")
+}
 
 func getKillSignalChan() chan os.Signal {
 	osKillSignalchan := make(chan os.Signal, 1)
@@ -32,7 +55,7 @@ func waitForKillSignall(killSignalChan <-chan os.Signal) {
 }
 
 func startServer(serverURL string, dbServer *model2.DBServer) *http.Server {
-	server := makeServer(dbServer.Database)
+	server := GetOrderRepository(dbServer.Database)
 	router := transport2.Router(server)
 	srv := &http.Server{Addr: serverURL, Handler: router}
 	go func() {
@@ -41,38 +64,16 @@ func startServer(serverURL string, dbServer *model2.DBServer) *http.Server {
 	return srv
 }
 
-func makeServer(db *sql.DB) *transport2.OrderRepository {
+func GetOrderRepository(db *sql.DB) *transport2.OrderRepository {
 	return &transport2.OrderRepository{
 		OrderService: model2.CreateOrderServiceInterface(db),
 	}
 }
 
-func main() {
-
-	log.SetFormatter(&log.JSONFormatter{})
-	file, err := os.OpenFile("my.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
-	if err == nil {
-		log.SetOutput(file)
-		defer file.Close()
-	}
-
-	conf, err := parseEnv()
-	if err == nil {
-
-		s := createDBConnection()
-
-		log.WithFields(log.Fields{"url": conf.SrvRESTAddress}).Info("starting server")
-		killSignalChan := getKillSignalChan()
-		srv := startServer(conf.SrvRESTAddress, &s)
-
-		waitForKillSignall(killSignalChan)
-		srv.Shutdown(context.Background())
-	}
-	log.Println("can't load config")
-}
-
-func createDBConnection() model2.DBServer {
-	db, err := sql.Open(driver, dataSourceName)
+func createDBConnection(conf *config) model2.DBServer {
+	dataSourceName := conf.DBUser + ":" + conf.DBPass + "@/" + conf.DBName
+	fmt.Println(dataSourceName)
+	db, err := sql.Open(conf.DBDriver, dataSourceName)
 	if err != nil {
 		log.Fatal(err)
 	}
