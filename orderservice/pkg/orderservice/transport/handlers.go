@@ -52,7 +52,7 @@ func Router(orderService *OrderRepository) http.Handler {
 	s.HandleFunc("/order/{ID}", orderService.GetOrder).Methods(http.MethodGet)
 	s.HandleFunc("/order", orderService.CreateOrder).Methods(http.MethodPost)
 	s.HandleFunc("/order/{ID}", orderService.deleteOrder).Methods(http.MethodDelete)
-	s.HandleFunc("/order/{ID}", orderService.UpdeteOrder).Methods(http.MethodPost)
+	s.HandleFunc("/order/{ID}", orderService.UpdateOrder).Methods(http.MethodPost)
 	return logMiddleware(r)
 }
 
@@ -70,7 +70,12 @@ func logMiddleware(h http.Handler) http.Handler {
 }
 
 func (orderService *OrderRepository) GetOrders(w http.ResponseWriter, r *http.Request) {
-	orders := orderService.OrderService.GetOrders()
+	orders, err := orderService.OrderService.GetOrders()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	b, err := json.Marshal(orders)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -83,11 +88,11 @@ func sendResponse(w http.ResponseWriter, b []byte, status int) {
 	w.Header().Set("Content-type", "application/json; charset=UTF-8")
 	w.WriteHeader(status)
 	if _, err := io.WriteString(w, string(b)); err != nil {
-		log.WithField("err", err).Error("write responce error")
+		log.WithField("err", err).Error("write response error")
 	}
 }
 
-func (orderService *OrderRepository) UpdeteOrder(w http.ResponseWriter, r *http.Request) {
+func (orderService *OrderRepository) UpdateOrder(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	if vars["ID"] == "" {
 		http.Error(w, "Not found", http.StatusNotFound)
@@ -119,7 +124,11 @@ func (orderService *OrderRepository) GetOrder(w http.ResponseWriter, r *http.Req
 		return
 	}
 	id := vars["ID"]
-	ord := orderService.OrderService.GetOrder(id)
+	ord, err := orderService.OrderService.GetOrder(id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
 	if ord.Id != "" {
 		b, err := json.Marshal(ord)
